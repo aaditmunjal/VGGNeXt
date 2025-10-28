@@ -11,7 +11,6 @@ from vgg import vgg16_bn
 
 # Configuration
 
-MODEL_NAME = "vgg"  
 LEARNING_RATE = 0.01
 BATCH_SIZE = 128
 EPOCHS = 50 
@@ -193,5 +192,5 @@ if __name__ == '__main__':
     plt.xticks(range(1, EPOCHS + 1, 3))
     plt.grid(True)
     plt.legend()
-    plt.savefig(f'plots/validation_accuracy_plot.png') 
+    plt.savefig('plots/validation_accuracy_plot.png') 
     print("Plot saved as validation_accuracy_plot.png")
