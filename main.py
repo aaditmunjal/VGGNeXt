@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
-from datasets import load_dataset  # Hugging Face datasets library
+from datasets import load_dataset
 import time
 import matplotlib.pyplot as plt
 
@@ -11,10 +11,10 @@ from vgg import vgg16_bn
 
 # Configuration  
 LEARNING_RATE = 0.01
-BATCH_SIZE = 64
-EPOCHS = 100  
+BATCH_SIZE = 128
+EPOCHS = 50 
 NUM_CLASSES = 200 # Tiny ImageNet has 200 classes
-IMAGE_SIZE = 224  # VGG's expected input size
+IMAGE_SIZE = 128  # VGG's expected input size
 
 
 # Data Loading & Transforms
@@ -113,7 +113,6 @@ def validate(epoch):
     
     print(f'\nValidation Set: Epoch: {epoch}, Avg. Loss: {val_loss:.4f}, Accuracy: {correct}/{total} ({val_acc:.2f}%)\n')
     
-    scheduler.step(val_loss)
     return val_acc
 
 
@@ -127,14 +126,7 @@ if __name__ == '__main__':
     print("Loading Tiny ImageNet dataset from Hugging Face...")
     tiny_imagenet = load_dataset("zh-plus/tiny-imagenet")
 
-    # Get subset of training data
-    subset_size = 10000
-    indices = torch.randperm(len(tiny_imagenet['train'])).tolist()
-    train_subset_indices = indices[:subset_size]
-    train_subset = tiny_imagenet['train'].select(train_subset_indices)
-    print(f"Using a training subset of {len(train_subset)} images.")
-
-    train_data = HfDatasetWrapper(train_subset, train_transform)        
+    train_data = HfDatasetWrapper(tiny_imagenet['train'], train_transform)        
     val_data = HfDatasetWrapper(tiny_imagenet['valid'], val_transform) 
 
     # Create DataLoaders
@@ -160,10 +152,7 @@ if __name__ == '__main__':
     optimizer = optim.SGD(model.parameters(), 
                         lr=LEARNING_RATE,           
                         momentum=0.9,
-                        weight_decay=1e-4) 
-
-    # Learning rate scheduler: Reduces LR if validation accuracy plateaus
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1)
+                        weight_decay=1e-4)
 
     best_val_acc = 0.0
     validation_accuracies = [] 
