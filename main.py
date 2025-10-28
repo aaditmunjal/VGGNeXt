@@ -13,7 +13,7 @@ from vgg import vgg16_bn
 
 LEARNING_RATE = 0.01
 BATCH_SIZE = 128
-EPOCHS = 50 
+EPOCHS = 40
 NUM_CLASSES = 200 # Tiny ImageNet has 200 classes
 IMAGE_SIZE = 128 
 SUBSET_SIZE = 0 # 0 means train on entire training set
@@ -84,7 +84,7 @@ def train(epoch):
         total += target.size(0)
         correct += predicted.eq(target).sum().item()
 
-        if batch_idx % 10 == 9:  # Print every 10 batches
+        if batch_idx % 100 == 99:  # Print every 100 batches
             batch_time = time.time() - start_time
             print(f'Train Epoch: {epoch} [{batch_idx * BATCH_SIZE}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\t'
                   f'Loss: {running_loss / 10:.6f} | '
@@ -136,7 +136,8 @@ if __name__ == '__main__':
         train_data = HfDatasetWrapper(train_subset, train_transform)
     else:       
         train_data = HfDatasetWrapper(tiny_imagenet['train'], train_transform)
-        val_data = HfDatasetWrapper(tiny_imagenet['valid'], val_transform) 
+        
+    val_data = HfDatasetWrapper(tiny_imagenet['valid'], val_transform) 
 
     # Create DataLoaders
     train_loader = DataLoader(train_data, 
