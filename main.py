@@ -9,12 +9,15 @@ import matplotlib.pyplot as plt
 
 from vgg import vgg16_bn
 
-# Configuration  
+# Configuration
+
+MODEL_NAME = "vgg"  
 LEARNING_RATE = 0.01
 BATCH_SIZE = 128
 EPOCHS = 50 
 NUM_CLASSES = 200 # Tiny ImageNet has 200 classes
-IMAGE_SIZE = 128  # VGG's expected input size
+IMAGE_SIZE = 128 
+SUBSET_SIZE = 0 # 0 means train on entire training set
 
 
 # Data Loading & Transforms
@@ -126,8 +129,15 @@ if __name__ == '__main__':
     print("Loading Tiny ImageNet dataset from Hugging Face...")
     tiny_imagenet = load_dataset("zh-plus/tiny-imagenet")
 
-    train_data = HfDatasetWrapper(tiny_imagenet['train'], train_transform)        
-    val_data = HfDatasetWrapper(tiny_imagenet['valid'], val_transform) 
+    if SUBSET_SIZE != 0:
+        indices = torch.randperm(len(tiny_imagenet['train'])).tolist()
+        train_subset_indices = indices[:SUBSET_SIZE]
+        train_subset = tiny_imagenet['train'].select(train_subset_indices)
+        print(f"Using a training subset of {len(train_subset)} images.")
+        train_data = HfDatasetWrapper(train_subset, train_transform)
+    else:       
+        train_data = HfDatasetWrapper(tiny_imagenet['train'], train_transform)
+        val_data = HfDatasetWrapper(tiny_imagenet['valid'], val_transform) 
 
     # Create DataLoaders
     train_loader = DataLoader(train_data, 
@@ -155,8 +165,8 @@ if __name__ == '__main__':
                         weight_decay=1e-4)
 
     best_val_acc = 0.0
-    validation_accuracies = [] 
-    
+    validation_accuracies = []
+
     for epoch in range(1, EPOCHS + 1):
         print(f"--- Epoch {epoch}/{EPOCHS} ---")
         train(epoch)
@@ -172,7 +182,7 @@ if __name__ == '__main__':
     print("Training Complete!")
     print(f"Best Validation Accuracy: {best_val_acc:.2f}%")
 
-    # Plot validation accuracy over EPOCs
+    # Plot validation accuracy over epochs
     print("Generating validation accuracy plot...")
     epochs_range = range(1, EPOCHS + 1)
     plt.figure(figsize=(10, 5))
@@ -180,8 +190,8 @@ if __name__ == '__main__':
     plt.title('Validation Accuracy per Epoch')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy (%)')
-    plt.xticks(epochs_range) # Ensure integer ticks for epochs
+    plt.xticks(range(1, EPOCHS + 1, 3))
     plt.grid(True)
     plt.legend()
-    plt.savefig('validation_accuracy_plot.png') 
+    plt.savefig(f'plots/validation_accuracy_plot.png') 
     print("Plot saved as validation_accuracy_plot.png")
