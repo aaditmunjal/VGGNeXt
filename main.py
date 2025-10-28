@@ -86,8 +86,8 @@ def train(epoch):
 
         if batch_idx % 100 == 99:  # Print every 100 batches
             batch_time = time.time() - start_time
-            print(f'Train Epoch: {epoch} [{batch_idx * BATCH_SIZE}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\t'
-                  f'Loss: {running_loss / 10:.6f} | '
+            print(f'Train Epoch: {epoch} [{(batch_idx + 1) * BATCH_SIZE}/{len(train_loader.dataset)} ({100. * (batch_idx + 1) / len(train_loader):.0f}%)]\t'
+                  f'Loss: {running_loss / 100:.6f} | '
                   f'Acc: {100.*correct/total:.2f}% | '
                   f'Time: {batch_time:.2f}s')
             running_loss = 0.0
