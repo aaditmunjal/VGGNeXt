@@ -13,7 +13,7 @@ from vgg import vgg16_bn
 
 LEARNING_RATE = 0.01
 BATCH_SIZE = 128
-EPOCHS = 40
+EPOCHS = 100
 NUM_CLASSES = 200 # Tiny ImageNet has 200 classes
 IMAGE_SIZE = 128 
 SUBSET_SIZE = 0 # 0 means train on entire training set
@@ -74,10 +74,14 @@ def train(epoch):
         data, target = data.to(device), target.to(device)
         
         optimizer.zero_grad()
-        output = model(data)
-        loss = criterion(output, target)
-        loss.backward()
-        optimizer.step()
+
+        with torch.autocast(device_type=device_str):
+            output = model(data)
+            loss = criterion(output, target)
+        
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         running_loss += loss.item()
         _, predicted = output.max(1)
@@ -103,8 +107,10 @@ def validate(epoch):
     with torch.no_grad():
         for data, target in val_loader:
             data, target = data.to(device), target.to(device)
-            output = model(data)
-            val_loss += criterion(output, target).item()
+            
+            with torch.autocast(device_type=device_str):
+                output = model(data)
+                val_loss += criterion(output, target).item()
             
             _, predicted = output.max(1)
             total += target.size(0)
@@ -121,7 +127,8 @@ def validate(epoch):
 if __name__ == '__main__':
     
     # Use GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device_str = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device_str)
     print(f"Using device: {device}")
 
     # Load Dataset
@@ -143,13 +150,13 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_data, 
                             batch_size=BATCH_SIZE, 
                             shuffle=True, 
-                            num_workers=2,  
+                            num_workers=4,  
                             pin_memory=True) 
 
     val_loader = DataLoader(val_data, 
                             batch_size=BATCH_SIZE, 
                             shuffle=False, 
-                            num_workers=2,
+                            num_workers=4,
                             pin_memory=True)
 
     print("Data loaded and DataLoaders created.")
@@ -163,6 +170,8 @@ if __name__ == '__main__':
                         lr=LEARNING_RATE,           
                         momentum=0.9,
                         weight_decay=1e-4)
+    
+    scaler = torch.GradScaler(device=device)
 
     best_val_acc = 0.0
     validation_accuracies = []
