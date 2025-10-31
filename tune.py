@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 from datasets import load_dataset
 import optuna
+import time
 
 from vgg import vgg16_bn
 
@@ -13,6 +14,7 @@ BATCH_SIZE = 128
 NUM_CLASSES = 200
 IMAGE_SIZE = 128
 EPOCHS_PER_TRIAL = 10 # Train for 10 epochs per trial
+NUM_TRIALS = 50
 
 # Data Loading & Transforms
 
@@ -55,15 +57,18 @@ class HfDatasetWrapper(Dataset):
         return image, label
 
 # Simplified train function
-def train_epoch(model, device, train_loader, criterion, optimizer):
+def train_epoch(model, device, train_loader, criterion, optimizer, scaler):
     model.train()
     for _, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
-        output = model(data)
-        loss = criterion(output, target)
-        loss.backward()
-        optimizer.step()
+        with torch.autocast(device_type=device_str):
+            output = model(data)
+            loss = criterion(output, target)
+        
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
     
 # Simplified validate function
 def validate_epoch(model, device, val_loader):
@@ -73,7 +78,10 @@ def validate_epoch(model, device, val_loader):
     with torch.no_grad():
         for data, target in val_loader:
             data, target = data.to(device), target.to(device)
-            output = model(data)
+            
+            with torch.autocast(device_type=device_str):
+                output = model(data)
+            
             _, predicted = output.max(1)
             total += target.size(0)
             correct += predicted.eq(target).sum().item()
@@ -96,8 +104,10 @@ def objective(trial):
     
     criterion = nn.CrossEntropyLoss()
 
+    scaler = torch.GradScaler(device=device)
+
     for epoch in range(EPOCHS_PER_TRIAL):
-        train_epoch(model, device, train_loader, criterion, optimizer)
+        train_epoch(model, device, train_loader, criterion, optimizer, scaler)
         val_acc = validate_epoch(model, device, val_loader)
         
         trial.report(val_acc, epoch)
@@ -110,18 +120,21 @@ def objective(trial):
 
 if __name__ == '__main__':
 
+    start_time = time.time()
+
     # Use GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device_str = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device_str)
 
     # Load Dataset
     tiny_imagenet = load_dataset("zh-plus/tiny-imagenet")
     indices = torch.randperm(len(tiny_imagenet['train'])).tolist()
-    train_subset = tiny_imagenet['train'].select(indices[:1000]) # 1000 images
+    train_subset = tiny_imagenet['train'].select(indices[:10000]) # 10000 images
     val_data_set = HfDatasetWrapper(tiny_imagenet['valid'], val_transform)
     train_data_set = HfDatasetWrapper(train_subset, train_transform)
     
-    train_loader = DataLoader(train_data_set, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_data_set, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
+    train_loader = DataLoader(train_data_set, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_data_set, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
 
     print("Starting Optuna hyperparameter search...")
     
@@ -137,7 +150,7 @@ if __name__ == '__main__':
     # Run the optimization
     study.optimize(
         objective,
-        n_trials=50 
+        n_trials=NUM_TRIALS 
     )
 
     print("\nSearch complete!")
@@ -148,3 +161,6 @@ if __name__ == '__main__':
     print("  Params: ")
     for key, value in trial.params.items():
         print(f"    {key}: {value:.6f}")
+
+    end_time = time.time()
+    print(f"Time for {NUM_TRIALS} trials: {end_time-start_time:.2f}s")
