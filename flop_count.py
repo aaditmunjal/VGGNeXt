@@ -1,10 +1,10 @@
 import torch
-from vgg import vgg16_bn  # Example model
+from vgg import vgg16_bn_stage_ratio  # Example model
 
 from thop import profile  # Import the profile function from THOP
 
 # Load a pre-trained model (e.g., ResNet50)
-model = vgg16_bn(num_classes=200)
+model = vgg16_bn_stage_ratio(num_classes=200)
 
 # Create a dummy input tensor matching the model's expected input shape
 dummy_input = torch.randn(1, 3, 128, 128)

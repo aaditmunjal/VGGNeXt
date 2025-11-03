@@ -7,11 +7,12 @@ from datasets import load_dataset
 import time
 import matplotlib.pyplot as plt
 
-from vgg import vgg16_bn
+from vgg import vgg16_bn_stage_ratio
 
 # Configuration
 
 LEARNING_RATE = 0.01
+WEIGHT_DECAY = 1e-4
 BATCH_SIZE = 128
 EPOCHS = 100
 NUM_CLASSES = 200 # Tiny ImageNet has 200 classes
@@ -163,13 +164,13 @@ if __name__ == '__main__':
     print(f"Training on {len(train_data)} images, validating on {len(val_data)} images.")
 
     # Initialize Model, Loss, and Optimizer
-    model = vgg16_bn(num_classes=NUM_CLASSES).to(device)
+    model = vgg16_bn_stage_ratio(num_classes=NUM_CLASSES).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), 
                         lr=LEARNING_RATE,           
                         momentum=0.9,
-                        weight_decay=1e-4)
+                        weight_decay=WEIGHT_DECAY)
     
     scaler = torch.GradScaler(device=device)
 
@@ -184,9 +185,8 @@ if __name__ == '__main__':
         
         # Save the best model
         if current_val_acc > best_val_acc:
-            print(f"Validation accuracy improved ({best_val_acc:.2f}% -> {current_val_acc:.2f}%). Saving model...")
+            print(f"Validation accuracy improved ({best_val_acc:.2f}% -> {current_val_acc:.2f}%).")
             best_val_acc = current_val_acc
-            torch.save(model.state_dict(), "vgg16_bn_tiny_imagenet_best.pth")
             
     print("Training Complete!")
     print(f"Best Validation Accuracy: {best_val_acc:.2f}%")
