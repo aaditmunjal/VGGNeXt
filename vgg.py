@@ -68,10 +68,8 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequ
 
 
 cfgs: Dict[str, List[Union[str, int]]] = {
-    "A": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
-    "B": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
-    "D": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
-    "E": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512, "M"],
+    "A": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
+    "B": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, "M"]
 }
 
 
@@ -79,27 +77,8 @@ def _vgg(cfg: str, batch_norm: bool, **kwargs: Any) -> VGG:
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
     return model
 
-
-def vgg11(**kwargs: Any) -> VGG:
-    return _vgg("A", False, **kwargs)
-
-def vgg11_bn(**kwargs: Any) -> VGG:
+def vgg16_bn(**kwargs: Any) -> VGG:
     return _vgg("A", True, **kwargs)
 
-def vgg13(**kwargs: Any) -> VGG:
-    return _vgg("B", False, **kwargs)
-
-def vgg13_bn(**kwargs: Any) -> VGG:
+def vgg16_bn_stage_ratio(**kwargs: Any) -> VGG:
     return _vgg("B", True, **kwargs)
-
-def vgg16(**kwargs: Any) -> VGG:
-    return _vgg("D", False, **kwargs)
-
-def vgg16_bn(**kwargs: Any) -> VGG:
-    return _vgg("D", True, **kwargs)
-
-def vgg19(**kwargs: Any) -> VGG:
-    return _vgg("E", False, **kwargs)
-
-def vgg19_bn(**kwargs: Any) -> VGG:
-    return _vgg("E", True, **kwargs)
