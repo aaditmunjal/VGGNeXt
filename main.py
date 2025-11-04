@@ -7,7 +7,7 @@ from datasets import load_dataset
 import time
 import matplotlib.pyplot as plt
 
-from vgg import vgg16_bn_stage_ratio
+from vgg import vgg16_bn_four_stage
 
 # Configuration
 
@@ -16,7 +16,7 @@ WEIGHT_DECAY = 1e-4
 BATCH_SIZE = 128
 EPOCHS = 100
 NUM_CLASSES = 200 # Tiny ImageNet has 200 classes
-IMAGE_SIZE = 128 
+IMAGE_SIZE = 64
 SUBSET_SIZE = 0 # 0 means train on entire training set
 
 
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     print(f"Training on {len(train_data)} images, validating on {len(val_data)} images.")
 
     # Initialize Model, Loss, and Optimizer
-    model = vgg16_bn_stage_ratio(num_classes=NUM_CLASSES).to(device)
+    model = vgg16_bn_four_stage(num_classes=NUM_CLASSES).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), 

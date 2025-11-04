@@ -69,7 +69,8 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequ
 
 cfgs: Dict[str, List[Union[str, int]]] = {
     "A": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
-    "B": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, "M"]
+    "B": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, "M"],
+    "C": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, 256, 256, "M", 512, 512, 512, "M"],
 }
 
 
@@ -82,3 +83,6 @@ def vgg16_bn(**kwargs: Any) -> VGG:
 
 def vgg16_bn_stage_ratio(**kwargs: Any) -> VGG:
     return _vgg("B", True, **kwargs)
+
+def vgg16_bn_four_stage(**kwargs: Any) -> VGG:
+    return _vgg("C", True, **kwargs)
