@@ -1,10 +1,10 @@
 import torch
-from vgg import vgg16_bn_four_stage # Example model
+from vgg import vgg16_bn_GELU # Example model
 
 from thop import profile  # Import the profile function from THOP
 
 # Load a pre-trained model (e.g., ResNet50)
-model = vgg16_bn_four_stage(num_classes=200)
+model = vgg16_bn_GELU(num_classes=200)
 
 # Create a dummy input tensor matching the model's expected input shape
 dummy_input = torch.randn(1, 3, 64, 64)

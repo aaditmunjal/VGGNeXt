@@ -50,7 +50,7 @@ class VGG(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
-def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequential:
+def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False, GELU: bool = False) -> nn.Sequential:
     layers: List[nn.Module] = []
     in_channels = 3
     for v in cfg:
@@ -60,9 +60,15 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequ
             v = cast(int, v)
             conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                if GELU:
+                    layers += [conv2d, nn.BatchNorm2d(v), nn.GELU()]
+                else:
+                    layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
+                if GELU:
+                    layers += [conv2d, nn.GELU()]
+                else:
+                    layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
 
@@ -74,15 +80,18 @@ cfgs: Dict[str, List[Union[str, int]]] = {
 }
 
 
-def _vgg(cfg: str, batch_norm: bool, **kwargs: Any) -> VGG:
-    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
+def _vgg(cfg: str, batch_norm: bool, GELU: bool, **kwargs: Any) -> VGG:
+    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm, GELU=GELU), **kwargs)
     return model
 
 def vgg16_bn(**kwargs: Any) -> VGG:
-    return _vgg("A", True, **kwargs)
+    return _vgg("A", True, False, **kwargs)
 
 def vgg16_bn_stage_ratio(**kwargs: Any) -> VGG:
-    return _vgg("B", True, **kwargs)
+    return _vgg("B", True, False, **kwargs)
 
 def vgg16_bn_four_stage(**kwargs: Any) -> VGG:
-    return _vgg("C", True, **kwargs)
+    return _vgg("C", True, False, **kwargs)
+
+def vgg16_bn_GELU(**kwargs: Any) -> VGG:
+    return _vgg("C", True, True, **kwargs)
