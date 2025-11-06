@@ -11,6 +11,17 @@ import torch.nn as nn
 from typing import Union, List, Dict, Any, cast
 
 
+class LayerNorm(nn.Module):
+    def __init__(self, num_channels):
+        super().__init__()
+        self.norm = nn.LayerNorm(num_channels)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 3, 1)   # to NHWC
+        x = self.norm(x)
+        x = x.permute(0, 3, 1, 2)   # back to NCHW
+        return x
+
 class VGG(nn.Module):
     def __init__(
         self, features: nn.Module, num_classes: int = 1000, init_weights: bool = True, dropout: float = 0.5
@@ -66,9 +77,9 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False, GELU: bool
                     layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
                 if GELU:
-                    layers += [conv2d, nn.GELU()]
+                    layers += [conv2d, LayerNorm(v), nn.GELU()]
                 else:
-                    layers += [conv2d, nn.ReLU(inplace=True)]
+                    layers += [conv2d, LayerNorm(v), nn.ReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
 
@@ -95,3 +106,4 @@ def vgg16_bn_four_stage(**kwargs: Any) -> VGG:
 
 def vgg16_bn_GELU(**kwargs: Any) -> VGG:
     return _vgg("C", True, True, **kwargs)
+
