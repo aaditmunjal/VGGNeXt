@@ -7,7 +7,7 @@ from datasets import load_dataset
 import time
 import matplotlib.pyplot as plt
 
-from vgg import vgg16_bn_hybrid_downsampling
+from vgg import vgg16_bn_blocks
 
 # Configuration
 
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     print(f"Training on {len(train_data)} images, validating on {len(val_data)} images.")
 
     # Initialize Model, Loss, and Optimizer
-    model = vgg16_bn_hybrid_downsampling(num_classes=NUM_CLASSES).to(device)
+    model = vgg16_bn_blocks(num_classes=NUM_CLASSES).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), 
