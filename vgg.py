@@ -67,6 +67,14 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False, GELU: bool
     for v in cfg:
         if v == "M":
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        elif type(v) == str and v.startswith("C"):
+            v = int(v[1:])
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, stride=2, padding=1)
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(v)]
+            else:
+                layers += [conv2d, LayerNorm(v)]
+            in_channels = v
         else:
             v = cast(int, v)
             conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
@@ -88,6 +96,8 @@ cfgs: Dict[str, List[Union[str, int]]] = {
     "A": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
     "B": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, "M"],
     "C": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, 256, 256, "M", 512, 512, 512, "M"],
+    "D": [64, 64, "C128", 128, 128, "C256", 256, 256, 256, 256, 256, 256, "C512", 512, 512, 512, "C512"],
+    "E": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, 256, 256, "C512", 512, 512, 512, "C512"]
 }
 
 
@@ -107,3 +117,8 @@ def vgg16_bn_four_stage(**kwargs: Any) -> VGG:
 def vgg16_bn_GELU(**kwargs: Any) -> VGG:
     return _vgg("C", True, True, **kwargs)
 
+def vgg16_bn_separate_downsampling(**kwargs: Any) -> VGG:
+    return _vgg("D", True, True, **kwargs)
+
+def vgg16_bn_hybrid_downsampling(**kwargs: Any) -> VGG:
+    return _vgg("E", True, True, **kwargs)
