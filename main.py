@@ -6,8 +6,9 @@ import torchvision.transforms as transforms
 from datasets import load_dataset
 import time
 import matplotlib.pyplot as plt
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from vgg import vgg16_bn_blocks
+from vgg import vgg_residual_blocks_V2
 
 # Configuration
 
@@ -164,7 +165,7 @@ if __name__ == '__main__':
     print(f"Training on {len(train_data)} images, validating on {len(val_data)} images.")
 
     # Initialize Model, Loss, and Optimizer
-    model = vgg16_bn_blocks(num_classes=NUM_CLASSES).to(device)
+    model = vgg_residual_blocks_V2(num_classes=NUM_CLASSES).to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), 
@@ -173,6 +174,7 @@ if __name__ == '__main__':
                         weight_decay=WEIGHT_DECAY)
     
     scaler = torch.GradScaler(device=device)
+    scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
     best_val_acc = 0.0
     validation_accuracies = []
@@ -182,6 +184,7 @@ if __name__ == '__main__':
         train(epoch)
         current_val_acc = validate(epoch)
         validation_accuracies.append(current_val_acc)
+        scheduler.step()
         
         # Save the best model
         if current_val_acc > best_val_acc:

@@ -9,6 +9,7 @@
 import torch
 import torch.nn as nn
 from typing import Union, List, Dict, Any, cast
+from torchvision.ops import StochasticDepth
 
 
 class LayerNorm(nn.Module):
@@ -21,6 +22,42 @@ class LayerNorm(nn.Module):
         x = self.norm(x)
         x = x.permute(0, 3, 1, 2)   # back to NCHW
         return x
+    
+
+class ResidualBlock(nn.Module):
+    def __init__(self, conv_block):
+        super().__init__()
+        self.conv_block = conv_block
+
+    def forward(self, x):
+        identity = x
+        out = self.conv_block(x)
+        out = identity + out
+        return out
+
+class ResidualBlockV2(nn.Module):
+    def __init__(self, in_channels, drop_prob: float = 0.0):
+        super().__init__()
+        self.pre_norm = nn.Sequential(
+            nn.BatchNorm2d(in_channels),
+            nn.GELU()
+        )
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, bias=False), 
+            nn.BatchNorm2d(in_channels),
+            nn.GELU(),
+            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, bias=False)
+        )
+        self.stochastic_depth = StochasticDepth(drop_prob, "row")
+
+    def forward(self, x):
+        identity = x
+        out = self.pre_norm(x)
+        out = self.conv_block(out)
+        out = self.stochastic_depth(out)
+        out = identity + out 
+        return out
+    
 
 class VGG(nn.Module):
     def __init__(
@@ -81,6 +118,13 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False, GELU: bool
             conv2d_2 = nn.Conv2d(v, v, kernel_size=3, padding=1)
             layers += [conv2d, nn.BatchNorm2d(v), nn.GELU(), conv2d_2, nn.BatchNorm2d(v)]
             in_channels = v
+        elif v == "R":
+            conv2d = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
+            conv2d_2 = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
+            conv_block = [conv2d, nn.BatchNorm2d(in_channels), nn.GELU(), conv2d_2, nn.BatchNorm2d(in_channels)]
+            layers.append(ResidualBlock(nn.Sequential(*conv_block)))
+        elif v == "R2":
+            layers.append(ResidualBlockV2(in_channels, drop_prob=0.1))
         else:
             v = cast(int, v)
             conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
@@ -104,7 +148,9 @@ cfgs: Dict[str, List[Union[str, int]]] = {
     "C": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, 256, 256, "M", 512, 512, 512, "M"],
     "D": [64, 64, "C128", 128, 128, "C256", 256, 256, 256, 256, 256, 256, "C512", 512, 512, 512, "C512"],
     "E": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, 256, 256, "C512", 512, 512, 512, "C512"],
-    "F": ["B64", "M", "B128", "M", "B256", "B256", "B256", "M", "B512", "B512", "M"]
+    "F": ["B64", "M", "B128", "M", "B256", "B256", "B256", "M", "B512", "B512", "M"],
+    "G": [64, 64, "C128", "R", "C256", "R", "R", "R", "C512", "R", "R", "C512"],
+    "H": ["C64", "R2", "C128", "R2", "C256", "R2", "R2", "R2", "C512", "R2", "R2"]
 }
 
 
@@ -112,23 +158,29 @@ def _vgg(cfg: str, batch_norm: bool, GELU: bool, **kwargs: Any) -> VGG:
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm, GELU=GELU), **kwargs)
     return model
 
-def vgg16_bn(**kwargs: Any) -> VGG:
+def vgg_base(**kwargs: Any) -> VGG:
     return _vgg("A", True, False, **kwargs)
 
-def vgg16_bn_stage_ratio(**kwargs: Any) -> VGG:
+def vgg_stage_ratio(**kwargs: Any) -> VGG:
     return _vgg("B", True, False, **kwargs)
 
-def vgg16_bn_four_stage(**kwargs: Any) -> VGG:
+def vgg_four_stage(**kwargs: Any) -> VGG:
     return _vgg("C", True, False, **kwargs)
 
-def vgg16_bn_GELU(**kwargs: Any) -> VGG:
+def vgg_GELU(**kwargs: Any) -> VGG:
     return _vgg("C", True, True, **kwargs)
 
-def vgg16_bn_separate_downsampling(**kwargs: Any) -> VGG:
+def vgg_separate_downsampling(**kwargs: Any) -> VGG:
     return _vgg("D", True, True, **kwargs)
 
-def vgg16_bn_hybrid_downsampling(**kwargs: Any) -> VGG:
+def vgg_hybrid_downsampling(**kwargs: Any) -> VGG:
     return _vgg("E", True, True, **kwargs)
 
-def vgg16_bn_blocks(**kwargs: Any) -> VGG:
+def vgg_blocks(**kwargs: Any) -> VGG:
     return _vgg("F", True, True, **kwargs)
+
+def vgg_residual_blocks(**kwargs: Any) -> VGG:
+    return _vgg("G", True, True, **kwargs)
+
+def vgg_residual_blocks_V2(**kwargs: Any) -> VGG:
+    return _vgg("H", True, True, **kwargs)

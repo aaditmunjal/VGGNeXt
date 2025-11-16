@@ -7,7 +7,7 @@ from datasets import load_dataset
 import optuna
 import time
 
-from vgg import vgg16_bn
+from vgg import vgg_residual_blocks_V2
 
 # Configuration 
 BATCH_SIZE = 128
@@ -92,11 +92,11 @@ def validate_epoch(model, device, val_loader):
 # Optuna objective function
 def objective(trial):
 
-    model = vgg16_bn(num_classes=NUM_CLASSES).to(device)
+    model = vgg_residual_blocks_V2(num_classes=NUM_CLASSES).to(device)
     
     # Tune learning rate and weight decay
-    lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
-    weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-1, log=True)
+    lr = trial.suggest_float("lr", 5e-4, 5e-3, log=True)
+    weight_decay = trial.suggest_float("weight_decay", 1e-2, 1e-1, log=True)
     
     optimizer = optim.AdamW(model.parameters(),
                             lr=lr,
