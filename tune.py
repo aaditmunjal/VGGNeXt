@@ -95,7 +95,7 @@ def objective(trial):
     model = vgg_residual_blocks_V2(num_classes=NUM_CLASSES).to(device)
     
     # Tune learning rate and weight decay
-    lr = trial.suggest_float("lr", 5e-4, 5e-3, log=True)
+    lr = trial.suggest_float("lr", 1e-4, 5e-3, log=True)
     weight_decay = trial.suggest_float("weight_decay", 1e-2, 1e-1, log=True)
     
     optimizer = optim.AdamW(model.parameters(),

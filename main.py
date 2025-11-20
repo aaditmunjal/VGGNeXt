@@ -7,6 +7,8 @@ from datasets import load_dataset
 import time
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import LinearLR
+from torch.optim.lr_scheduler import SequentialLR
 
 from vgg import vgg_residual_blocks_V2
 
@@ -19,6 +21,8 @@ EPOCHS = 100
 NUM_CLASSES = 200 # Tiny ImageNet has 200 classes
 IMAGE_SIZE = 64
 SUBSET_SIZE = 0 # 0 means train on entire training set
+OPTIMIZER = "SGD"
+WARMUP = False
 
 
 # Data Loading & Transforms
@@ -168,13 +172,30 @@ if __name__ == '__main__':
     model = vgg_residual_blocks_V2(num_classes=NUM_CLASSES).to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), 
-                        lr=LEARNING_RATE,           
-                        momentum=0.9,
-                        weight_decay=WEIGHT_DECAY)
+
+    if OPTIMIZER == "ADAMW":
+        optimizer = optim.AdamW(model.parameters(), 
+                                lr=LEARNING_RATE,           
+                                weight_decay=WEIGHT_DECAY)
+    else:
+        optimizer = optim.SGD(model.parameters(), 
+                              lr=LEARNING_RATE,           
+                              momentum=0.9,
+                              weight_decay=WEIGHT_DECAY)
     
     scaler = torch.GradScaler(device=device)
-    scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS)
+    
+
+    if WARMUP:
+        scheduler1 = LinearLR(optimizer, total_iters=10)
+        scheduler2 = CosineAnnealingLR(optimizer, T_max=EPOCHS-10)
+        scheduler = SequentialLR(
+                    optimizer,
+                    schedulers=[scheduler1, scheduler2],
+                    milestones=[10],
+                    )
+    else:
+        scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
     best_val_acc = 0.0
     validation_accuracies = []
