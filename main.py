@@ -10,19 +10,20 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.optim.lr_scheduler import LinearLR
 from torch.optim.lr_scheduler import SequentialLR
 
-from vgg import vgg_residual_blocks_V2
+from vggnext import VGGNeXt
 
 # Configuration
 
 LEARNING_RATE = 0.01
 WEIGHT_DECAY = 1e-4
 BATCH_SIZE = 128
-EPOCHS = 100
+EPOCHS = 150
 NUM_CLASSES = 200 # Tiny ImageNet has 200 classes
 IMAGE_SIZE = 64
 SUBSET_SIZE = 0 # 0 means train on entire training set
 OPTIMIZER = "SGD"
-WARMUP = False
+WARMUP = True
+COSINE_ANNEALING = True
 
 
 # Data Loading & Transforms
@@ -169,7 +170,7 @@ if __name__ == '__main__':
     print(f"Training on {len(train_data)} images, validating on {len(val_data)} images.")
 
     # Initialize Model, Loss, and Optimizer
-    model = vgg_residual_blocks_V2(num_classes=NUM_CLASSES).to(device)
+    model = VGGNeXt(num_classes=NUM_CLASSES).to(device)
 
     criterion = nn.CrossEntropyLoss()
 
@@ -194,7 +195,7 @@ if __name__ == '__main__':
                     schedulers=[scheduler1, scheduler2],
                     milestones=[10],
                     )
-    else:
+    elif COSINE_ANNEALING:
         scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
     best_val_acc = 0.0
@@ -205,7 +206,8 @@ if __name__ == '__main__':
         train(epoch)
         current_val_acc = validate(epoch)
         validation_accuracies.append(current_val_acc)
-        scheduler.step()
+        if COSINE_ANNEALING:
+            scheduler.step()
         
         # Save the best model
         if current_val_acc > best_val_acc:
@@ -223,7 +225,7 @@ if __name__ == '__main__':
     plt.title('Validation Accuracy per Epoch')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy (%)')
-    plt.xticks(range(1, EPOCHS + 1, 3))
+    plt.xticks(range(1, EPOCHS + 1, 5))
     plt.grid(True)
     plt.legend()
     plt.savefig('plots/validation_accuracy_plot.png') 
