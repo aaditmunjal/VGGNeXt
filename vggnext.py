@@ -35,7 +35,7 @@ class VGG(nn.Module):
         self.features = features
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Linear(640 * 7 * 7, 4096),
+            nn.Linear(512 * 7 * 7, 4096),
             nn.GELU(),
             nn.Dropout(p=dropout),
             nn.Linear(4096, 4096),
@@ -81,7 +81,7 @@ def make_layers(cfg: List[Union[str, int]]) -> nn.Sequential:
 
 
 cfgs: Dict[str, List[Union[str, int]]] = {
-    "A": ["C64", "R2", "C128", "R2", "C320", "R2", "R2", "R2", "R2", "R2", "R2", "C640", "R2", "R2"]
+    "A": ["C64", "R2", "C128", "R2", "C320", "R2", "R2", "R2", "R2", "R2", "R2", "C512", "R2"]
 }
 
 

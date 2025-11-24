@@ -225,7 +225,7 @@ if __name__ == '__main__':
     plt.title('Validation Accuracy per Epoch')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy (%)')
-    plt.xticks(range(1, EPOCHS + 1, 5))
+    plt.xticks(range(1, EPOCHS + 1, 10))
     plt.grid(True)
     plt.legend()
     plt.savefig('plots/validation_accuracy_plot.png') 
