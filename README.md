@@ -37,7 +37,7 @@ VGGNeXt/
 ├── requirements.txt               # Dependencies
 ├── README.md                      # This file
 ├── plots/                         # Validation accuracy over epochs for each model iteration
-├── adamw/                         # Validation accuracy over epochs with the adamW 
+├── adamw/                         # Validation accuracy over epochs with the adamW optimizer
 ```
 
 ## Setup & Installation
