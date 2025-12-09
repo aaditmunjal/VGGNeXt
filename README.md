@@ -48,7 +48,7 @@ VGGNeXt/
     git clone https://github.com/aaditmunjal/VGGNeXt.git
     cd VGGNeXt
     ```
-2.  Create and activate virtual environment (highly recommended):
+2.  Create and activate virtual environment (highly recommended)
 
 3.  To install all necessary packages, the following command can be utilized:
     ```bash
