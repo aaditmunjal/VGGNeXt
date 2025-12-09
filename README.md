@@ -34,6 +34,7 @@ VGGNeXt/
 ├── vgg.py                         # All iterations starting with the base VGG16
 ├── main.py                        # Main file for training the model
 ├── tune.py                        # AdamW hyperparameter tuning
+├── flop_count.py                  # Evaluate model computational cost
 ├── requirements.txt               # Dependencies
 ├── README.md                      # This file
 ├── plots/                         # Validation accuracy over epochs for each model iteration
